@@ -1,11 +1,12 @@
 #include <TFT_eSPI.h>
 #include <iostream>
 #include <time.h> // Required for time functions
+#include "global.h"
 
-
-TFT_eSPI tft = TFT_eSPI();
-
-
+void someFunction() {
+    Serial.println("someFunction: Filling screen with black...");
+    tft.fillScreen(TFT_BLACK); // Example usage of tft
+}
 
 void initializeRTC() {
     // Set the time zone (e.g., UTC+0)
@@ -28,14 +29,17 @@ String getTime() {
     return String(buffer);
 }
 
-// void displayText(const char* text) {
-//     if (text == nullptr) {
-//         Serial.println("Error: Null text passed to displayText.");
-//         return;
-//     }
-//     tft.init();
-//     tft.setRotation(1);
-//     tft.fillScreen(TFT_BLACK);
-//     tft.drawCentreString(text, tft.width() / 2, tft.height() / 2, 2);
-//     std::cout << "Displayed text: " << text << std::endl;
-// }
+// Function to display text on the screen
+void displayText(const char* text) {
+    if (text == nullptr) {
+        Serial.println("Error: Null text passed to displayText.");
+        return;
+    }
+    Serial.println("Displaying text on TFT...");
+    tft.fillScreen(TFT_BLACK); // Clear the screen
+    tft.setTextColor(TFT_WHITE, TFT_BLACK); // Set text color
+    tft.setTextSize(2); // Set text size
+    tft.setCursor(10, 10); // Set cursor position
+    tft.println(text); // Display the text
+    Serial.println("Text displayed.");
+}
