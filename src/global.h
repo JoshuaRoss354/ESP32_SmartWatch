@@ -3,7 +3,13 @@
 #define GLOBAL_H
 
 #include <TFT_eSPI.h>
+#include <Arduino.h>
 
-extern TFT_eSPI tft; // Declare the tft object as external
+extern TFT_eSPI tft; // Global variable
 
-#endif
+// Declare shared functions
+void initializeRTC();
+String getTime();
+void scanNetworks();
+
+#endif // GLOBAL_H

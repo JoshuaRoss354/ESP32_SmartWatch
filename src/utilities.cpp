@@ -1,45 +1,81 @@
 #include <TFT_eSPI.h>
-#include <iostream>
-#include <time.h> // Required for time functions
+#include <WiFi.h>
+#include <time.h>
 #include "global.h"
 
-void someFunction() {
-    Serial.println("someFunction: Filling screen with black...");
-    tft.fillScreen(TFT_BLACK); // Example usage of tft
-}
-
+// Initialize RTC using NTP
 void initializeRTC() {
-    // Set the time zone (e.g., UTC+0)
-    configTime(0, 0, "pool.ntp.org", "time.nist.gov"); // Use NTP servers to sync time
-    Serial.println("Waiting for time synchronization...");
-    while (!time(nullptr)) {
-        delay(1000);
-        Serial.println("Syncing time...");
+    // Make sure Wi-Fi is already connected before calling this
+    Serial.println("🕒 Initializing RTC via NTP...");
+
+    // Configure time via NTP servers (no timezone offset, no daylight saving)
+    configTzTime("MST7MDT,M3.2.0/2,M11.1.0/2", "pool.ntp.org", "time.nist.gov");
+
+
+
+    Serial.println("⌛ Waiting for valid NTP time...");
+
+    time_t now = time(nullptr);
+    int waitCount = 0;
+
+    // Wait up to 10 seconds for NTP to sync
+    while (now < 100000 && waitCount < 20) {
+        delay(500);
+        Serial.print(".");
+        now = time(nullptr);
+        waitCount++;
     }
-    Serial.println("Time synchronized.");
+
+    if (now >= 100000) {
+        Serial.println("\n✅ Time synchronized.");
+        struct tm timeinfo;
+        localtime_r(&now, &timeinfo);
+        Serial.printf("📅 Current time: %02d:%02d:%02d\n",
+                      timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+    } else {
+        Serial.println("\n⚠️ Failed to sync time.");
+    }
 }
 
-// Function to get the current time as a formatted string
+// Returns the current time as a formatted string
 String getTime() {
-    time_t now = time(nullptr); // Get the current time
+    time_t now = time(nullptr);
     struct tm timeinfo;
-    localtime_r(&now, &timeinfo); // Convert to local time
+    localtime_r(&now, &timeinfo);
     char buffer[25];
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &timeinfo); // Format time
+    strftime(buffer, sizeof(buffer), "%I:%M:%S %p", &timeinfo);  // 12-hour format with AM/PM
     return String(buffer);
 }
 
-// Function to display text on the screen
+// Optional: Scan available Wi-Fi networks
+void scanNetworks() {
+    Serial.println("🔍 Scanning for Wi-Fi networks...");
+    int n = WiFi.scanNetworks();
+    if (n == 0) {
+        Serial.println("❌ No networks found.");
+    } else {
+        Serial.printf("✅ Found %d network(s):\n", n);
+        for (int i = 0; i < n; ++i) {
+            Serial.printf("  [%d] %s (%ddBm) %s\n", i + 1,
+                          WiFi.SSID(i).c_str(),
+                          WiFi.RSSI(i),
+                          (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) ? "open" : "");
+        }
+    }
+}
+
+// Display text on the TFT screen using global tft
 void displayText(const char* text) {
-    if (text == nullptr) {
-        Serial.println("Error: Null text passed to displayText.");
+    if (!text) {
+        Serial.println("⚠️ Error: Null text passed to displayText.");
         return;
     }
-    Serial.println("Displaying text on TFT...");
-    tft.fillScreen(TFT_BLACK); // Clear the screen
-    tft.setTextColor(TFT_WHITE, TFT_BLACK); // Set text color
-    tft.setTextSize(2); // Set text size
-    tft.setCursor(10, 10); // Set cursor position
-    tft.println(text); // Display the text
-    Serial.println("Text displayed.");
+
+    Serial.println("🖥️ Displaying text on TFT...");
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setTextSize(2);
+    tft.setCursor(10, 10);
+    tft.println(text);
+    Serial.println("✅ Text displayed.");
 }

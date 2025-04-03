@@ -1,77 +1,84 @@
-// #include <Arduino.h>
-// #include <iostream>
-// #include <time.h>
-
-
-
-// // put function declarations here:
-// int myFunction(int, int);
-// void displayText(const char* text);
-// void initializeRTC();
-// String getTime();
-
-
-// void setup() {
-//   Serial.begin(115200);
-//   delay(1000);
-//   Serial.println("hi");
-
-//   Serial.println("Calling displayText...");
-//   //displayText("Hello, world! 1");
-//   Serial.println("displayText completed.");
-
-//   initializeRTC();
-
-//   // Print the current time
-//   Serial.println("Current time: " + getTime());
-
-//   int result = myFunction(2, 3);
-// }
-// void loop() {
-//   Serial.println("Current time: " + getTime());
-//   delay(1000);
-//   // put your main code here, to run repeatedly:
-// }
-
-// // put function definitions here:
-// int myFunction(int x, int y) {
-//   return x + y;
-// }
-
 #include <Arduino.h>
-#include <TFT_eSPI.h> // Include the TFT_eSPI library
+#include <TFT_eSPI.h>
+#include <utilities.h> 
+#include "global.h"
+#include <WiFi.h>
 
-TFT_eSPI tft = TFT_eSPI(); // Define the tft object here
+// Create an instance of the TFT_eSPI class
+TFT_eSPI tft = TFT_eSPI(); 
+
+// Function declarations
+int myFunction(int, int);
+void initializeDisplay();
 
 void setup() {
-  Serial.begin(115200);
-  delay(1000);
-  Serial.println("Starting setup...");
+    Serial.begin(115200);
+    delay(1000);
+    Serial.println("hi");
 
-  // Initialize the TFT screen
-  Serial.println("Initializing TFT...");
-  tft.init();
-  tft.setRotation(1); // Set screen orientation (0-3)
-  tft.fillScreen(TFT_BLACK); // Clear the screen with black color
+    const char* ssid     = "edamame-IoT";
+    const char* password = "zanylotus139";
 
-  // Display some text
-  Serial.println("Displaying text...");
-  tft.setTextColor(TFT_WHITE, TFT_BLACK); // Set text color (foreground, background)
-  tft.setTextSize(2); // Set text size
-  tft.setCursor(10, 10); // Set cursor position (x, y)
-  tft.println("Hello, Smartwatch!");
+    Serial.println("Starting WiFi scan...");
 
-  // Draw a rectangle
-  Serial.println("Drawing rectangle...");
-  tft.drawRect(50, 50, 100, 50, TFT_RED); // (x, y, width, height, color)
+    int n = WiFi.scanNetworks(); //scan for networks
+    Serial.println("Scan done");
 
-  // Draw a filled circle
-  Serial.println("Drawing circle...");
-  tft.fillCircle(120, 120, 30, TFT_BLUE); // (x, y, radius, color)
+    if (n == 0) {
+        Serial.println("No networks found.");
+    } else {
+        Serial.printf("%d networks found:\n", n);
+        for (int i = 0; i < n; ++i) {
+            Serial.printf("%d: %s (%d) %s\n", i + 1,
+                          WiFi.SSID(i).c_str(),
+                          WiFi.RSSI(i),
+                          (WiFi.encryptionType(i) == WIFI_AUTH_OPEN) ? "open" : "");
+            delay(10);
+        }
+    }
 
-  Serial.println("Setup completed.");
+    // Attempt to connect
+    Serial.printf("\nConnecting to %s...\n", ssid);
+    WiFi.begin(ssid, password);
+
+    int attempts = 0;
+    while (WiFi.status() != WL_CONNECTED && attempts < 50) {
+        delay(500);
+        Serial.print(".");
+        attempts++;
+    }
+
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("\nWiFi connected!");
+        Serial.print("IP Address: ");
+        Serial.println(WiFi.localIP());
+
+        // 🕒 Initialize RTC after Wi-Fi is connected
+        initializeRTC();
+    } else {
+        Serial.println("\n❌ WiFi connection failed.");
+    }
+
+    // Initialize the display
+    tft.init();
+    tft.setRotation(1);
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextSize(3);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setTextDatum(MC_DATUM);  // Middle center text alignment
 }
 
 void loop() {
-  // Add more screen updates here if needed
+    static String lastTime = "";
+    String currentTime = getTime();
+
+    if (currentTime != lastTime) {
+        Serial.println(currentTime);
+        tft.fillScreen(TFT_BLACK); // Clear screen
+        tft.drawString(currentTime, tft.width() / 2, tft.height() / 2); // Centered time
+        lastTime = currentTime;
+    }
+
+    delay(1000); // Wait 1 second
+
 }
