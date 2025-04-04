@@ -16,8 +16,8 @@ void setup() {
     delay(1000);
     Serial.println("hi");
 
-    const char* ssid     = "edamame-IoT";
-    const char* password = "zanylotus139";
+    const char* ssid     = "edamame";
+    const char* password = "mmHellof409";
 
     Serial.println("Starting WiFi scan...");
 
@@ -42,8 +42,8 @@ void setup() {
     WiFi.begin(ssid, password);
 
     int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 50) {
-        delay(500);
+    while (WiFi.status() != WL_CONNECTED && attempts < 100) {
+        delay(1000);
         Serial.print(".");
         attempts++;
     }
