@@ -4,29 +4,35 @@
 #include "global.h"
 
 // Initialize RTC using NTP
+#include <time.h>
+#include <TFT_eSPI.h>
+extern TFT_eSPI tft;
+
 void initializeRTC() {
-    // Make sure Wi-Fi is already connected before calling this
     Serial.println("🕒 Initializing RTC via NTP...");
 
-    // Configure time via NTP servers (no timezone offset, no daylight saving)
+    // Show syncing screen
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextDatum(MC_DATUM);
+    tft.setTextSize(2);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.drawString("Syncing Time...", tft.width() / 2, tft.height() / 2);
+
+    // Configure timezone + NTP servers
     configTzTime("MST7MDT,M3.2.0/2,M11.1.0/2", "pool.ntp.org", "time.nist.gov");
 
-
-
     Serial.println("⌛ Waiting for valid NTP time...");
-
     time_t now = time(nullptr);
     int waitCount = 0;
 
-    // Wait up to 10 seconds for NTP to sync
-    while (now < 100000 && waitCount < 20) {
+    while (now < 8 * 3600 * 2 && waitCount < 40) {
         delay(500);
         Serial.print(".");
         now = time(nullptr);
         waitCount++;
     }
 
-    if (now >= 100000) {
+    if (now >= 8 * 3600 * 2) {
         Serial.println("\n✅ Time synchronized.");
         struct tm timeinfo;
         localtime_r(&now, &timeinfo);
@@ -34,8 +40,19 @@ void initializeRTC() {
                       timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
     } else {
         Serial.println("\n⚠️ Failed to sync time.");
+        tft.fillScreen(TFT_BLACK);
+        tft.setTextDatum(MC_DATUM);
+        tft.setTextColor(TFT_RED, TFT_BLACK);
+        tft.drawString("Time Sync Failed", tft.width() / 2, tft.height() / 2);
+        delay(2000);
     }
+
+    // Clear screen after sync attempt
+    tft.fillScreen(TFT_BLACK);
 }
+
+
+
 
 // Returns the current time as a formatted string
 String getTime() {
@@ -45,6 +62,18 @@ String getTime() {
     char buffer[25];
     strftime(buffer, sizeof(buffer), "%I:%M:%S %p", &timeinfo);  // 12-hour format with AM/PM
     return String(buffer);
+}
+
+// Returns the current date as a formatted string
+String getDate() {
+    struct tm timeinfo;
+    if (!getLocalTime(&timeinfo)) {
+        return String("??/??/??");
+    }
+
+    char buf[9]; // MM/DD/YY + null terminator
+    strftime(buf, sizeof(buf), "%m/%d/%y", &timeinfo);
+    return String(buf);
 }
 
 // Optional: Scan available Wi-Fi networks
