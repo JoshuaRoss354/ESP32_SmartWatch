@@ -12,12 +12,7 @@ void initializeRTC() {
     Serial.println("🕒 Initializing RTC via NTP...");
 
     // Show syncing screen
-    tft.fillScreen(TFT_BLACK);
-    tft.setTextDatum(MC_DATUM);
-    tft.setTextSize(2);
-    tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    tft.drawString("Syncing Time...", tft.width() / 2, tft.height() / 2);
-
+   
     // Configure timezone + NTP servers
     configTzTime("MST7MDT,M3.2.0/2,M11.1.0/2", "pool.ntp.org", "time.nist.gov");
 
@@ -40,10 +35,7 @@ void initializeRTC() {
                       timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
     } else {
         Serial.println("\n⚠️ Failed to sync time.");
-        tft.fillScreen(TFT_BLACK);
-        tft.setTextDatum(MC_DATUM);
-        tft.setTextColor(TFT_RED, TFT_BLACK);
-        tft.drawString("Time Sync Failed", tft.width() / 2, tft.height() / 2);
+       
         delay(2000);
     }
 
